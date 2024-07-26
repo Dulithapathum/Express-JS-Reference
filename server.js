@@ -1,6 +1,8 @@
 import express from "express"; // Import the Express library
 
 const app = express(); // Create an Express application
+app.use(express.json()); // Middleware to parse JSON request bodies
+
 const PORT = process.env.PORT || 3000; // Define the port for the server, defaulting to 3000
 
 // Sample user data
@@ -22,36 +24,27 @@ const users = [
   },
 ];
 
-// Define a route for the home page
-app.get("/", (req, res) => {
-  // Send a response with status 200 and a message
-  res.status(200).send("This is Home Page");
+// Define a route for retrieving the list of users
+app.get("/users", (req, res) => {
+  // Send the list of users with status 200
+  res.status(200).send(users);
   // Log the URL that was accessed
   console.log(`Site Url: ${req.url}`);
 });
 
-// Define a route to get users with optional filtering
-app.get("/users", (req, res) => {
-  // Destructure the `filter` query parameter from the request
-  const { filter } = req.query;
+// Define a route for adding a new user
+app.post("/users", (req, res) => {
+  // Extract the request body
+  const { body } = req;
 
-  // If no filter query parameter is provided, return a 400 status with an error message
-  if (!filter) {
-    return res.status(400).send("Filter query parameter is required.");
-  }
+  // Create a new user object with a unique id
+  const newUser = { id: users.length + 1, ...body };
 
-  // Filter the users based on the `filter` query parameter
-  const filterUser = users.filter((user) => {
-    return user.name.trim() === filter.trim(); // Compare names after trimming any extra spaces
-  });
+  // Add the new user to the users array
+  users.push(newUser);
 
-  // If no users match the filter, return a 404 status with a not-found message
-  if (filterUser.length === 0) {
-    return res.status(404).send("No users found matching the filter.");
-  } else {
-    // Return the filtered users
-    return res.send(filterUser);
-  }
+  // Send the updated list of users with status 200
+  return res.status(200).send(users);
 });
 
 // Start the server and listen on the defined port

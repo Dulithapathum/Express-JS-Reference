@@ -1,52 +1,61 @@
-import express from "express";
+import express from "express"; // Import the Express library
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const app = express(); // Create an Express application
+const PORT = process.env.PORT || 3000; // Define the port for the server, defaulting to 3000
 
+// Sample user data
 const users = [
   {
     id: 1,
-    name: "dulitha Pathum",
+    name: "dulitha ",
     age: 23,
   },
   {
     id: 2,
-    name: "amila karunarathna",
+    name: "amila ",
     age: 25,
   },
   {
     id: 3,
-    name: "kasun rathnayaka",
+    name: "kasun ",
     age: 35,
   },
 ];
 
+// Define a route for the home page
 app.get("/", (req, res) => {
+  // Send a response with status 200 and a message
   res.status(200).send("This is Home Page");
-  console.log(`Site Url :${req.url}`);
+  // Log the URL that was accessed
+  console.log(`Site Url: ${req.url}`);
 });
 
+// Define a route to get users with optional filtering
 app.get("/users", (req, res) => {
-  res.status(200).send(users);
-  console.log(`Site Url :${req.url}`);
-});
+  // Destructure the `filter` query parameter from the request
+  const { filter } = req.query;
 
-app.get("/users/:id", (req, res) => {
-  const parseId = parseInt(req.params.id);
-  if (isNaN(parseId)) {
-    return res.status(400).send("Bad Request");
+  // If no filter query parameter is provided, return a 400 status with an error message
+  if (!filter) {
+    return res.status(400).send("Filter query parameter is required.");
   }
-  const findValue = users.find((user) => {
-    return user.id === parseId;
+
+  // Filter the users based on the `filter` query parameter
+  const filterUser = users.filter((user) => {
+    return user.name.trim() === filter.trim(); // Compare names after trimming any extra spaces
   });
 
-  if (!findValue) {
-    return res.status(404).send("User Can not Find");
+  // If no users match the filter, return a 404 status with a not-found message
+  if (filterUser.length === 0) {
+    return res.status(404).send("No users found matching the filter.");
   } else {
-    return res.send(findValue);
+    // Return the filtered users
+    return res.send(filterUser);
   }
 });
 
+// Start the server and listen on the defined port
 app.listen(PORT, () => {
-  console.log("Server Is Running");
+  // Log a message to indicate the server is running
+  console.log(`Server is running on port ${PORT}`);
 });

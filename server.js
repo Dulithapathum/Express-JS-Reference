@@ -5,15 +5,6 @@ app.use(express.json()); // Middleware to parse JSON request bodies
 
 const PORT = process.env.PORT || 3000; // Define the port for the server, defaulting to 3000
 
-// Custom middleware to log the request method and URL
-const showUrlAndMethod = (req, res, next) => {
-  console.log(`${req.method} and ${req.url}`); // Log the HTTP method and URL
-  next(); // Pass control to the next middleware function
-};
-
-// Use the custom middleware globally
-app.use(showUrlAndMethod);
-
 // Sample user data
 const users = [
   { id: 1, name: "Dulitha", age: 23 },
@@ -21,83 +12,80 @@ const users = [
   { id: 3, name: "Kasun", age: 35 },
 ];
 
+// Middleware to log request method and URL
+const showUrlAndMethod = (req, res, next) => {
+  console.log(`${req.method} and ${req.url}`);
+  next();
+};
+
+// Middleware to extract and validate user ID
+const validateUserId = (req, res, next) => {
+  const { id } = req.params;
+  const parsedId = parseInt(id, 10);
+
+  if (isNaN(parsedId)) {
+    return res.status(400).send({ message: "Invalid user ID" });
+  }
+
+  req.userId = parsedId; // Attach the parsed ID to the request object
+  req.userIndex = users.findIndex(u => u.id === parsedId); // Find the user index
+
+  next(); // Pass control to the next middleware or route handler
+};
+
+app.use(showUrlAndMethod);
+
 // Route to retrieve the list of users
-app.get("/users", (req, res, next) => {
-  console.log('Middleware One');
-  next(); // Pass control to the next middleware function
-}, (req, res, next) => {
-  console.log('Middleware Two');
-  next(); // Pass control to the next middleware function
-}, (req, res) => {
+app.get("/users", (req, res) => {
   res.status(200).send(users); // Send the list of users with status 200
 });
 
 // Route to retrieve a specific user by ID
-app.get("/users/:id", (req, res) => {
-  const { id } = req.params; // Extract user ID from the request parameters
-  const parsedId = parseInt(id, 10); // Parse the ID to an integer
-  const user = users.find(u => u.id === parsedId); // Find the user with the matching ID
+app.get("/users/:id", validateUserId, (req, res) => {
+  const user = users.find(u => u.id === req.userId);
 
   if (user) {
-    res.status(200).send(user); // Send user data with status 200
+    res.status(200).send(user);
   } else {
-    res.status(404).send({ message: "User not found" }); // Send 404 if user not found
+    res.status(404).send({ message: "User not found" });
   }
 });
 
-// Route to add a new user
-app.post("/users", (req, res) => {
-  const { body } = req; // Extract the request body
-  const newUser = { id: users.length + 1, ...body }; // Create a new user with a unique ID
-  users.push(newUser); // Add the new user to the users array
-  res.status(200).send(users); // Send the updated list of users with status 200
-});
-
 // Route to update a user by ID (full update)
-app.put("/users/:id", (req, res) => {
-  const { id } = req.params; // Extract user ID from the request parameters
-  const { body } = req; // Extract the request body
-  const parsedId = parseInt(id, 10); // Parse the ID to an integer
-  const userIndex = users.findIndex(u => u.id === parsedId); // Find the user index
+app.put("/users/:id", validateUserId, (req, res) => {
+  const { body } = req;
 
-  if (userIndex !== -1) {
-    users[userIndex] = { id: parsedId, ...body }; // Update the user data
-    res.status(200).send(users[userIndex]); // Send the updated user data
+  if (req.userIndex !== -1) {
+    users[req.userIndex] = { id: req.userId, ...body };
+    res.status(200).send(users[req.userIndex]);
   } else {
-    res.status(404).send({ message: "User not found" }); // Send 404 if user not found
+    res.status(404).send({ message: "User not found" });
   }
 });
 
 // Route to patch a user by ID (partial update)
-app.patch("/users/:id", (req, res) => {
-  const { id } = req.params; // Extract user ID from the request parameters
-  const { body } = req; // Extract the request body
-  const parsedId = parseInt(id, 10); // Parse the ID to an integer
-  const userIndex = users.findIndex(u => u.id === parsedId); // Find the user index
+app.patch("/users/:id", validateUserId, (req, res) => {
+  const { body } = req;
 
-  if (userIndex !== -1) {
-    users[userIndex] = { ...users[userIndex], ...body }; // Partially update the user data
-    res.status(200).send(users[userIndex]); // Send the updated user data
+  if (req.userIndex !== -1) {
+    users[req.userIndex] = { ...users[req.userIndex], ...body };
+    res.status(200).send(users[req.userIndex]);
   } else {
-    res.status(404).send({ message: "User not found" }); // Send 404 if user not found
+    res.status(404).send({ message: "User not found" });
   }
 });
 
 // Route to delete a user by ID
-app.delete('/users/:id', (req, res) => {
-  const { id } = req.params; // Extract user ID from the request parameters
-  const parsedId = parseInt(id, 10); // Parse the ID to an integer
-  const userIndex = users.findIndex(u => u.id === parsedId); // Find the user index
-
-  if (userIndex !== -1) {
-    users.splice(userIndex, 1); // Remove the user from the array
-    res.status(200).send({ message: "User deleted successfully" }); // Send success message
+app.delete('/users/:id', validateUserId, (req, res) => {
+  if (req.userIndex !== -1) {
+    users.splice(req.userIndex, 1);
+    res.status(200).send({ message: "User deleted successfully" });
   } else {
-    res.status(404).send({ message: "User not found" }); // Send 404 if user not found
+    res.status(404).send({ message: "User not found" });
   }
 });
 
 // Start the server and listen on the defined port
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`); // Log a message to indicate the server is running
+  console.log(`Server is running on port ${PORT}`);
 });

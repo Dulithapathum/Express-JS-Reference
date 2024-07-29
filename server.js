@@ -81,6 +81,20 @@ app.patch("/users/:id", (req, res) => {
 });
 
 
+// Route to delete a user by ID
+app.delete('/users/:id', (req, res) => {
+  const { id } = req.params; // Extract user ID from the request parameters
+  const parsedId = parseInt(id, 10); // Parse the ID to an integer
+  const userIndex = users.findIndex(u => u.id === parsedId); // Find the user index
+
+  if (userIndex !== -1) {
+    users.splice(userIndex, 1); // Remove the user from the array
+    res.status(200).send({ message: "User deleted successfully" }); // Send success message
+  } else {
+    res.status(404).send({ message: "User not found" }); // Send 404 if user not found
+  }
+});
+
 // Start the server and listen on the defined port
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`); // Log a message to indicate the server is running

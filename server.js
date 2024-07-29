@@ -42,6 +42,15 @@ app.get("/users/:id", (req, res) => {
     res.status(404).send({ message: "User not found" }); // Send 404 if user not found
   }
 });
+// Route to add a new user
+app.post("/users", (req, res) => {
+  const { body } = req; // Extract the request body
+  const newUser = { id: users.length + 1, ...body }; // Create a new user with a unique ID
+  users.push(newUser); // Add the new user to the users array
+  res.status(200).send(users); // Send the updated list of users with status 200
+});
+
+
 
 
 // Start the server and listen on the defined port

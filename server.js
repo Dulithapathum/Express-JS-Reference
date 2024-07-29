@@ -9,46 +9,42 @@ const PORT = process.env.PORT || 3000; // Define the port for the server, defaul
 const users = [
   {
     id: 1,
-    name: "dulitha ",
+    name: "Dulitha",
     age: 23,
   },
   {
     id: 2,
-    name: "amila ",
+    name: "Amila",
     age: 25,
   },
   {
     id: 3,
-    name: "kasun ",
+    name: "Kasun",
     age: 35,
   },
 ];
 
-// Define a route for retrieving the list of users
+// Route to retrieve the list of users
 app.get("/users", (req, res) => {
-  // Send the list of users with status 200
-  res.status(200).send(users);
-  // Log the URL that was accessed
-  console.log(`Site Url: ${req.url}`);
+  res.status(200).send(users); // Send the list of users with status 200
+  console.log(`Site URL: ${req.url}`); // Log the accessed URL
 });
 
-// Define a route for adding a new user
-app.post("/users", (req, res) => {
-  // Extract the request body
-  const { body } = req;
-
-  // Create a new user object with a unique id
-  const newUser = { id: users.length + 1, ...body };
-
-  // Add the new user to the users array
-  users.push(newUser);
-
-  // Send the updated list of users with status 200
-  return res.status(200).send(users);
+// Route to retrieve a specific user by ID
+app.get("/users/:id", (req, res) => {
+  const { id } = req.params; // Extract user ID from the request parameters
+  const parsedId = parseInt(id, 10); // Parse the ID to an integer
+  const user = users.find(u => u.id === parsedId); // Find the user with the matching ID
+  
+  if (user) {
+    res.status(200).send(user); // Send user data with status 200
+  } else {
+    res.status(404).send({ message: "User not found" }); // Send 404 if user not found
+  }
 });
+
 
 // Start the server and listen on the defined port
 app.listen(PORT, () => {
-  // Log a message to indicate the server is running
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`); // Log a message to indicate the server is running
 });

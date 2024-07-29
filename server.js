@@ -50,6 +50,21 @@ app.post("/users", (req, res) => {
   res.status(200).send(users); // Send the updated list of users with status 200
 });
 
+// Route to update a user by ID (full update)
+app.put("/users/:id", (req, res) => {
+  const { id } = req.params; // Extract user ID from the request parameters
+  const { body } = req; // Extract the request body
+  const parsedId = parseInt(id, 10); // Parse the ID to an integer
+  const userIndex = users.findIndex(u => u.id === parsedId); // Find the user index
+  
+  if (userIndex !== -1) {
+    users[userIndex] = { id: parsedId, ...body }; // Update the user data
+    res.status(200).send(users[userIndex]); // Send the updated user data
+  } else {
+    res.status(404).send({ message: "User not found" }); // Send 404 if user not found
+  }
+});
+
 
 
 

@@ -1,15 +1,23 @@
-import express from 'express'; // Import the Express library
-import router from "./router.mjs"; // Import the router module that contains the route handlers
+import express from 'express';
+import cookieParser from 'cookie-parser';
 
-const app = express(); // Create an Express application
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-app.use(express.json()); // Middleware to parse JSON request bodies
+app.use(express.json());
+app.use(cookieParser('dula'));
 
-app.use(router); // Use the imported router for handling routes
+app.get('/', (req, res) => {
+  // Set a cookie
+  res.cookie('CookieName', 'CookieValue', { maxAge: 60000, httpOnly: true , signed: true });
 
-const PORT = process.env.PORT || 3000; // Define the port for the server, defaulting to 3000
+  // Read cookies from the request headers
+  // console.log('Cookies:', req.cookies);
+  console.log('Signed Cookies:', req.signedCookies.CookieName);
+  // Send a response
+  res.send('Cookie set and read successfully');
+});
 
-// Start the server and listen on the defined port
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`); // Log a message to indicate the server is running
+  console.log(`Server is running on port ${PORT}`);
 });

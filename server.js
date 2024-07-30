@@ -1,52 +1,59 @@
-import express from 'express'; // Import express module
-import session from 'express-session'; // Import express-session module
-import bodyParser from 'body-parser'; // Import body-parser module
+import express from 'express';
+import passport from 'passport';
+import LocalStrategy from 'passport-local';
+import session from 'express-session';
+import bodyParser from 'body-parser';
+import flash from 'connect-flash';
 
-const app = express(); // Create an Express application
-
-// Define the port
+const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware to parse JSON bodies
 app.use(bodyParser.json());
-
-// Middleware to parse URL-encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Configure session middleware
+// Middleware to handle sessions
 app.use(session({
-  secret: 'your_secret_key', // Set a secret key for session signing
+  secret: 'your_secret_key', // Replace with a secure key
   resave: false,
   saveUninitialized: false,
   cookie: { secure: false } // Set to true if using HTTPS
 }));
 
-// In-memory user storage (for simplicity)
-const users = {};
+// Initialize Passport and restore session state
+app.use(passport.initialize());
+app.use(passport.session());
 
-// Route to display registration form
-app.get('/register', (req, res) => {
-  res.send(`
-    <form method="POST" action="/register">
-      <label for="username">Username:</label>
-      <input type="text" id="username" name="username" required><br>
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" required><br>
-      <button type="submit">Register</button>
-    </form>
-  `);
+// Initialize connect-flash and use it
+app.use(flash());
+
+// User data (for simplicity, use a static object; replace with a database in real apps)
+const users = [
+  { id: 1, username: 'user1', password: 'password123' },
+  { id: 2, username: 'user2', password: 'password456' }
+];
+
+// Configure Passport to use the LocalStrategy
+passport.use(new LocalStrategy(
+  (username, password, done) => {
+    const user = users.find(u => u.username === username);
+    if (user && user.password === password) {
+      return done(null, user);
+    } else {
+      return done(null, false, { message: 'Incorrect username or password.' });
+    }
+  }
+));
+
+// Serialize user into session
+passport.serializeUser((user, done) => {
+  done(null, user.id);
 });
 
-// Route to handle user registration
-app.post('/register', (req, res) => {
-  const { username, password } = req.body;
-
-  if (users[username]) {
-    res.status(400).send('Username already exists');
-  } else {
-    users[username] = { password }; // Store user info
-    res.redirect('/login'); // Redirect to login page
-  }
+// Deserialize user from session
+passport.deserializeUser((id, done) => {
+  const user = users.find(u => u.id === id);
+  done(null, user);
 });
 
 // Route to display login form
@@ -59,39 +66,31 @@ app.get('/login', (req, res) => {
       <input type="password" id="password" name="password" required><br>
       <button type="submit">Login</button>
     </form>
+    ${req.flash('error') ? `<p>${req.flash('error')}</p>` : ''}
   `);
 });
 
 // Route to handle login
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-
-  if (users[username] && users[username].password === password) {
-    req.session.user = username; // Save user info in session
-    res.redirect('/profile'); // Redirect to profile page
-  } else {
-    res.status(401).send('Invalid username or password');
-  }
-});
+app.post('/login', passport.authenticate('local', {
+  successRedirect: '/profile',
+  failureRedirect: '/login',
+  failureFlash: true
+}));
 
 // Route to display user profile (protected)
 app.get('/profile', (req, res) => {
-  if (req.session.user) {
-    res.send(`<h1>Welcome, ${req.session.user}!</h1>
+  if (req.isAuthenticated()) {
+    res.send(`<h1>Welcome, ${req.user.username}!</h1>
               <a href="/logout">Logout</a>`);
   } else {
-    res.status(401).send('Please log in first');
+    res.redirect('/login');
   }
 });
 
 // Route to handle logout
 app.get('/logout', (req, res) => {
-  req.session.destroy(err => {
-    if (err) {
-      return res.status(500).send('Failed to log out');
-    }
-    res.redirect('/login'); // Redirect to login page after logout
-  });
+  req.logout();
+  res.redirect('/login');
 });
 
 // Start the server

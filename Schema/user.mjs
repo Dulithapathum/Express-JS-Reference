@@ -1,17 +1,18 @@
-import { request } from "express";
-import mongoose, { Schema } from "mongoose";
+import mongoose from 'mongoose';
 
-
-const UserSchema=Schema({
-    name:{
-        type:mongoose.Schema.Types.String,
-        require:true
+const UserSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
     },
-    age:{
-        type:mongoose.Schema.Types.String,
-        require:true
-    }
-})
+    age: {
+        type: String,
+        required: true,
+    },
+    password: {
+        type: String,
+        required: true,
+    },
+});
 
-
-export const User=mongoose.model('user',UserSchema)
+export const User = mongoose.model('User', UserSchema);

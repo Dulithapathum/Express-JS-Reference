@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from 'dotenv';
 import { User } from "./Schema/user.mjs";
-
+import { hashPassword } from "./Hashpassword/Hash.mjs";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
@@ -23,11 +23,15 @@ mongoose.connect(DATABASE_URL).then(() => {
 // Create a new user
 app.post('/user', async (req, res) => {
   try {
-    const newUser = new User(req.body);
+    let { name, age, password } = req.body;
+    password = await hashPassword(password); // Await the hashPassword function
+    const data = { name, age, password };
+    const newUser = new User(data);
     const savedUser = await newUser.save();
     res.status(201).send(savedUser);
   } catch (error) {
-    res.status(400).send(error);
+    console.error('Error creating user:', error);
+    res.status(400).send({ error: 'Failed to create user' });
   }
 });
 
